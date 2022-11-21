@@ -10,7 +10,6 @@ use dotenv; //loads enviornmental variables from .env file, mashes variables wit
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     let test = env::var("ALCHEMY_GOERLI_WS")?;
-    println!("{}", test);
     let (secret_key, pub_key) = eth_wallet::generate_keypair(); //calls the generate_keypair function from eth_wallet and stores tuple 
 
     println!("secret key: {}", &secret_key.to_string());
@@ -34,7 +33,7 @@ async fn main() -> Result<()> {
     // takes the environmental variable under .env "ALCHEMY_GOERLI" and stores it under endpoint
     // we then make a future to establish connection of the endpoint (which is saved under my .env file)
     //a websocket opens a connection to allow two users to communicate between the user and the server
-    let endpoint = env::var("ALCHEMY_GOERLI_WS")?;
+    let endpoint = std::env::var("ALCHEMY_GOERLI_WS")?;
     let web3_con = eth_wallet::establish_web3_connection(&endpoint).await?;
 
     let block_number = web3_con.eth().block_number().await?; //allows eth methods to be called on web3_con, here we are retrieving current block number.
