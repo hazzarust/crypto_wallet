@@ -1,5 +1,4 @@
 use crate::utils;
-
 use anyhow::Result;
 use secp256k1::{
     rand::{rngs, SeedableRng},
@@ -11,12 +10,10 @@ use std::str::FromStr;
 use std::{fs::OpenOptions, io::BufReader};
 use tiny_keccak::keccak256;
 use web3::{
-    transports,
+    transports::WebSocket,
     types::{Address, U256},
     Web3,
 };
-use web3::transports::WebSocket;
-
 
 
 
@@ -63,6 +60,12 @@ impl Wallet{
     pub fn get_public_key(&self) -> Result<PublicKey>{
         let public_key = PublicKey::from_str(&self.public_key)?; //gets the public key of wallet struct
         Ok(public_key)
+    }
+
+    pub async fn get_balance(&self, web3_connection: &Web3<WebSocket>) -> Result<f64>{
+        let wallet_address = Address::from_str(&self.public_address)?; //saves our address from our json file under wallet_address. wallet_address gets its address from our Wallet struct address
+        let balance = &web3_connection.eth().balance(wallet_address, None).await?; //connects to websocket address, will check balance of our wallet address.
+        Ok(utils::wei_to_eth(*balance))
     }
 
 }
