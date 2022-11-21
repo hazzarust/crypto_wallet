@@ -1,4 +1,5 @@
-use ::utils;
+use crate::utils;
+
 use anyhow::Result;
 use secp256k1::{
     rand::{rngs, SeedableRng},
@@ -9,7 +10,13 @@ use std::io::BufWriter;
 use std::str::FromStr;
 use std::{fs::OpenOptions, io::BufReader};
 use tiny_keccak::keccak256;
-use web3::types::Address;
+use web3::{
+    transports,
+    types::{Address, U256},
+    Web3,
+};
+use web3::transports::WebSocket;
+
 
 
 
@@ -63,7 +70,7 @@ impl Wallet{
 
 pub fn generate_keypair() -> (SecretKey, PublicKey) { //return a tuple of a secret and public key 
     let secp = secp256k1::Secp256k1::new(); //create instance of secp256k1 and store under secp
-    let mut rng = rngs::StdRng::seed_from_u64(111); //create a random number generator using a fixed seed number of 111
+    let mut rng = rngs::JitterRng::new_with_timer(utils::get_nstime); //create a random number generator every time we run program based off current time
     secp.generate_keypair(&mut rng) //creates the key pair
 }
 
@@ -75,7 +82,10 @@ pub fn public_key_address(public_key: &PublicKey) -> Address{ //will take in a r
 
     Address::from_slice(&hash[12..]) //we only keep the last 20bytes, these are the least significant bytes
     //we return the Address type, aka H160, H160 is a hash type with 160 bits in length (20bytes) || 20bytes * 8 = 160 bits
+}
 
-
+pub async fn establish_web3_connection(url: &str) -> Result<Web3<WebSocket>> { //takes url string slice as parameter and returns Web3 socket connection
+    let transport = web3::transports::WebSocket::new(url).await?; //makes a new websocket using url slice
+    Ok(web3::Web3::new(transport)) //returns the web socket here
 
 }

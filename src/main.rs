@@ -1,11 +1,16 @@
-use web3::ethabi::ethereum_types::Public;
-
-use crate::eth_wallet::public_key_address;
-
+use std::env;
+use tokio;
 use anyhow::Result;
 mod eth_wallet;
+mod utils;
+use dotenv; //loads enviornmental variables from .env file, mashes variables with the actual environmental variables provided by the OS.
+            //environmental variables are essentially global variables and can be created and available for reference at a point in time. 
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
+    dotenv::dotenv().ok();
+    let test = env::var("ALCHEMY_GOERLI_WS")?;
+    println!("{}", test);
     let (secret_key, pub_key) = eth_wallet::generate_keypair(); //calls the generate_keypair function from eth_wallet and stores tuple 
 
     println!("secret key: {}", &secret_key.to_string());
@@ -24,6 +29,16 @@ fn main() -> Result<()> {
 
     let loaded_wallet = eth_wallet::Wallet::from_file(&wallet_file_path)?;
     println!("Loaded Wallet: {:?}", loaded_wallet);
+
+
+    // takes the environmental variable under .env "ALCHEMY_GOERLI" and stores it under endpoint
+    // we then make a future to establish connection of the endpoint (which is saved under my .env file)
+    //a websocket opens a connection to allow two users to communicate between the user and the server
+    let endpoint = env::var("ALCHEMY_GOERLI_WS")?;
+    let web3_con = eth_wallet::establish_web3_connection(&endpoint).await?;
+
+    let block_number = web3_con.eth().block_number().await?; //allows eth methods to be called on web3_con, here we are retrieving current block number.
+    println!("block number: {}", &block_number); //here we print to see if connection is working. 
 
     Ok(())
 }
