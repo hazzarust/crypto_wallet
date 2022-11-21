@@ -1,4 +1,5 @@
-use anyhow::{bail, Result};
+use ::utils;
+use anyhow::Result;
 use secp256k1::{
     rand::{rngs, SeedableRng},
     PublicKey, SecretKey,
@@ -8,7 +9,9 @@ use std::io::BufWriter;
 use std::str::FromStr;
 use std::{fs::OpenOptions, io::BufReader};
 use tiny_keccak::keccak256;
-use web3::{types::Address, ethabi::ethereum_types::Secret};
+use web3::types::Address;
+
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Wallet{
@@ -32,10 +35,29 @@ impl Wallet{
         let file = OpenOptions::new().write(true).create(true).open(file_path)?; //OpenOptions allows us to create a file if it dosent exist yet or overwrite if it does. 
         let buf_writer = BufWriter::new(file);
 
-        serde_json::to_writer_pretty(buf_writer, self)?; //writes a formatted JSON structure to the file, self is what we are calling on,  keeps an in-memory buffer of data and writes it to an underlying writer in large, infrequent batches.
+        serde_json::to_writer_pretty(buf_writer, self)?; //writes a formatted JSON structure to the file, self is what we are calling on, buf writer keeps an in-memory buffer of data and writes it to an underlying writer in large, infrequent batches.
 
         Ok(())
     }
+
+    pub fn from_file(file_path: &str) -> Result<Wallet>{
+        let file = OpenOptions::new().read(true).open(file_path)?;
+        let buf_reader = BufReader::new(file); // Bufreader performs large, infrequent reads on the underlying Read and maintains an in-memory buffer of the results.
+
+        let wallet: Wallet = serde_json::from_reader(buf_reader)?; //tell serde_json that type is Wallet so it knows what to deserialize into
+        Ok(wallet)
+    }
+
+    pub fn get_secret_key(&self) -> Result<SecretKey>{
+        let secret_key = SecretKey::from_str(&self.secret_key)?; //gets the secret key of wallet struct
+        Ok(secret_key)
+    }
+
+    pub fn get_public_key(&self) -> Result<PublicKey>{
+        let public_key = PublicKey::from_str(&self.public_key)?; //gets the public key of wallet struct
+        Ok(public_key)
+    }
+
 }
 
 
