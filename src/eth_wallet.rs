@@ -11,9 +11,10 @@ use std::{fs::OpenOptions, io::BufReader};
 use tiny_keccak::keccak256;
 use web3::{
     transports::WebSocket,
-    types::{Address, U256},
+    types::{Address, U256, TransactionParameters},
     Web3,
 };
+use web3::types::H256;
 
 
 
@@ -70,6 +71,26 @@ impl Wallet{
 
 }
 
+//Default fills in the rest of the struct for us with default values, such as gas and gas price. 
+//This struct lays out the transaction parameters
+pub fn create_eth_transaction(to: Address, eth_value: f64) -> TransactionParameters{
+    TransactionParameters { 
+        to: Some(to),
+        value: utils::eth_to_wei(eth_value),
+        ..Default::default()
+     }
+}
+
+//This function takes in a web3 connection reference, the transaction parameters and my secret key.
+//It returns a H256 which is the transaction ID.
+//we sign first, and then we send. 
+//a U256 is a fixed-size uninterpreted hash type with 32 bytes (256 bits) size.
+pub async fn sign_and_send(web3: &Web3<WebSocket>, transaction: TransactionParameters, secret_key: &SecretKey) -> Result<H256>{
+    let signed = web3.accounts().sign_transaction(transaction, secret_key).await?;
+    let transaction_result = web3.eth().send_raw_transaction(signed.raw_transaction).await?;
+    println!("{}", transaction_result);
+    Ok(transaction_result)
+}
 
 pub fn generate_keypair() -> (SecretKey, PublicKey) { //return a tuple of a secret and public key 
     let secp = secp256k1::Secp256k1::new(); //create instance of secp256k1 and store under secp
